@@ -6,6 +6,6 @@
 
 [[redirects]]
   from = "/api/*"
-  to = "https://coffee-shop-demo.onrender.com/api/:splat"
+  to = "https://coffee-shop-demo-2.onrender.com/api/:splat"
   status = 200
   force = true

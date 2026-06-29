@@ -5,6 +5,7 @@
 - Publish directory: `frontend`
 - Frontend calls `/api` and Netlify proxies that path to the Render backend.
 - If you rename the Render service, update the redirect in `netlify.toml`.
+- Current live backend URL: `https://coffee-shop-demo-2.onrender.com`
 - `frontend/admin/qrcodes.html` automatically builds the guest QR URL based on whether the site is served from Netlify or from the backend.
 
 ## Backend on Render
