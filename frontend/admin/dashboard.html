@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Coffee & Tea</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <script src="../config.js"></script>
+  </head>
+  <body class="bg-gray-50 font-sans">
+    <!-- NAV -->
+    <nav
+      class="bg-white shadow-md px-6 py-3 flex items-center justify-between sticky top-0 z-20"
+    >
+      <div>
+        <h1 class="text-lg font-bold text-amber-800">
+          <i class="fas fa-crown mr-2"></i>Admin
+        </h1>
+        <span id="user-info" class="text-sm text-gray-500"></span>
+      </div>
+      <div class="flex items-center gap-2">
+        <a
+          href="qrcodes.html"
+          class="text-amber-700 hover:text-amber-800 transition text-sm font-medium"
+        >
+          <i class="fas fa-qrcode mr-1"></i>QR bàn
+        </a>
+        <a
+          href="../cashier/dashboard.html"
+          class="text-amber-700 hover:text-amber-800 transition text-sm font-medium"
+        >
+          <i class="fas fa-file-invoice-dollar mr-1"></i>Thanh toán
+        </a>
+        <button
+          onclick="logout()"
+          class="text-gray-500 hover:text-red-600 transition"
+        >
+          <i class="fas fa-sign-out-alt mr-1"></i>Đăng xuất
+        </button>
+      </div>
+    </nav>
+
+    <!-- TABS -->
+    <div class="max-w-6xl mx-auto p-4">
+      <div class="flex gap-2 mb-6">
+        <button
+          id="tab-menu"
+          class="tab-btn px-5 py-2 rounded-lg font-medium bg-amber-700 text-white"
+          onclick="switchTab('menu')"
+        >
+          <i class="fas fa-utensils mr-1"></i>Thực đơn
+        </button>
+        <button
+          id="tab-employees"
+          class="tab-btn px-5 py-2 rounded-lg font-medium bg-gray-200 text-gray-700"
+          onclick="switchTab('employees')"
+        >
+          <i class="fas fa-users mr-1"></i>Nhân viên
+        </button>
+      </div>
+
+      <!-- TAB: MENU -->
+      <div id="panel-menu" class="block">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-semibold text-gray-700">Danh sách món ăn</h2>
+          <button
+            onclick="openAddMonModal()"
+            class="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+          >
+            <i class="fas fa-plus mr-1"></i>Thêm món
+          </button>
+        </div>
+        <div id="menu-table" class="bg-white rounded-xl shadow overflow-x-auto">
+          <!-- JS renders -->
+        </div>
+      </div>
+
+      <!-- TAB: EMPLOYEES -->
+      <div id="panel-employees" class="hidden">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-semibold text-gray-700">
+            Danh sách nhân viên
+          </h2>
+          <button
+            onclick="openAddEmpModal()"
+            class="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+          >
+            <i class="fas fa-user-plus mr-1"></i>Thêm nhân viên
+          </button>
+        </div>
+        <div
+          id="employee-table"
+          class="bg-white rounded-xl shadow overflow-x-auto"
+        >
+          <!-- JS renders -->
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL THÊM/SỬA MÓN -->
+    <div
+      id="mon-modal"
+      class="fixed inset-0 bg-black/50 z-30 hidden items-center justify-center p-4"
+    >
+      <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
+        <h3 id="mon-modal-title" class="text-lg font-bold mb-4">Thêm món ăn</h3>
+        <div class="space-y-3">
+          <input
+            id="mon-ten"
+            placeholder="Tên món"
+            class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 outline-none"
+          />
+          <input
+            id="mon-gia"
+            type="number"
+            placeholder="Giá"
+            class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 outline-none"
+          />
+          <input
+            id="mon-giamgia"
+            type="number"
+            placeholder="Giảm giá (%)"
+            value="0"
+            class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 outline-none"
+          />
+          <input
+            id="mon-danhmuc"
+            placeholder="Danh mục (VD: Cà phê)"
+            class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 outline-none"
+          />
+          <input
+            id="mon-hinhanh"
+            placeholder="Đường dẫn hình ảnh"
+            class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 outline-none"
+          />
+          <select
+            id="mon-trangthai"
+            class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 outline-none"
+          >
+            <option value="ConHang">Còn hàng</option>
+            <option value="HetHang">Hết hàng</option>
+          </select>
+          <input id="mon-id" type="hidden" />
+        </div>
+        <div class="flex gap-2 mt-4">
+          <button
+            onclick="saveMon()"
+            class="flex-1 bg-amber-700 hover:bg-amber-800 text-white py-2 rounded-lg font-medium transition"
+          >
+            <i class="fas fa-save mr-1"></i>Lưu
+          </button>
+          <button
+            onclick="closeMonModal()"
+            class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 rounded-lg transition"
+          >
+            Hủy
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL THÊM NHÂN VIÊN -->
+    <div
+      id="emp-modal"
+      class="fixed inset-0 bg-black/50 z-30 hidden items-center justify-center p-4"
+    >
+      <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
+        <h3 class="text-lg font-bold mb-4">Thêm nhân viên</h3>
+        <div class="space-y-3">
+          <input
+            id="emp-hoten"
+            placeholder="Họ tên"
+            class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 outline-none"
+          />
+          <input
+            id="emp-username"
+            placeholder="Tên đăng nhập"
+            class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 outline-none"
+          />
+          <input
+            id="emp-password"
+            type="password"
+            placeholder="Mật khẩu"
+            class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 outline-none"
+          />
+          <select
+            id="emp-chucvu"
+            class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 outline-none"
+          >
+            <option value="ThuNgan">Thu ngân</option>
+            <option value="PhucVu">Phục vụ</option>
+            <option value="Admin">Admin</option>
+          </select>
+        </div>
+        <div class="flex gap-2 mt-4">
+          <button
+            onclick="saveEmployee()"
+            class="flex-1 bg-amber-700 hover:bg-amber-800 text-white py-2 rounded-lg font-medium transition"
+          >
+            <i class="fas fa-save mr-1"></i>Lưu
+          </button>
+          <button
+            onclick="closeEmpModal()"
+            class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 rounded-lg transition"
+          >
+            Hủy
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="dashboard.js"></script>
+  </body>
+</html>

@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: coffee-shop-api
+    env: docker
+    plan: free
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: ALLOWED_ORIGINS
+        value: "*"
+      - key: SECRET_KEY
+        value: "change-this-in-render"
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "480"

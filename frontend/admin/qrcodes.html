@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR Code Bàn - Coffee & Tea</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <script src="../config.js"></script>
+  </head>
+  <body class="bg-gray-50 font-sans p-6">
+    <div class="max-w-4xl mx-auto">
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="text-xl font-bold text-amber-800">
+          <i class="fas fa-qrcode mr-2"></i>Mã QR cho các bàn
+        </h1>
+        <a href="dashboard.html" class="text-amber-700 hover:underline text-sm">
+          <i class="fas fa-arrow-left mr-1"></i>Quay lại
+        </a>
+      </div>
+
+      <p class="text-gray-500 text-sm mb-6">
+        Quét mã QR để mở trang gọi món trên điện thoại. URL mẫu:
+        <code class="bg-gray-100 px-2 py-0.5 rounded text-xs"
+          >http://192.168.x.x:8000/frontend/guest/menu.html?ban=table_B01</code
+        >
+      </p>
+
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+        <label
+          for="base-url"
+          class="block text-sm font-semibold text-amber-900 mb-2"
+        >
+          URL gốc để in QR
+        </label>
+        <div class="flex gap-2 flex-col sm:flex-row">
+          <input
+            id="base-url"
+            type="text"
+            class="flex-1 border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-amber-500"
+            placeholder="http://192.168.1.10:8000"
+          />
+          <button
+            id="save-base-url"
+            class="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-lg font-medium transition"
+          >
+            Lưu URL
+          </button>
+        </div>
+        <p class="text-xs text-amber-900/80 mt-2">
+          Nếu điện thoại quét không vào được, hãy nhập IP LAN của máy đang chạy
+          backend thay vì `localhost`.
+        </p>
+      </div>
+
+      <div
+        id="qr-grid"
+        class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6"
+      >
+        <!-- JS renders -->
+      </div>
+    </div>
+
+    <script>
+      const API = window.APP_CONFIG?.API_BASE_URL || "/api";
+      const BASE_URL_KEY = "coffee_qr_base_url";
+      const baseUrlInput = document.getElementById("base-url");
+      const saveBaseUrlButton = document.getElementById("save-base-url");
+      const guestMenuPath = window.location.pathname.includes("/frontend/")
+        ? "/frontend/guest/menu.html"
+        : "/guest/menu.html";
+
+      function getDerivedFrontendBaseUrl() {
+        return window.location.origin;
+      }
+
+      function getBaseUrl() {
+        const stored = localStorage.getItem(BASE_URL_KEY);
+        if (stored) {
+          return stored;
+        }
+
+        const typed = baseUrlInput.value.trim();
+        if (!typed) {
+          return "";
+        }
+
+        if (typed.endsWith("/guest/menu.html")) {
+          return typed;
+        }
+
+        return `${typed.replace(/\/$/, "")}${guestMenuPath}`;
+      }
+
+      function setBaseUrl(value) {
+        localStorage.setItem(BASE_URL_KEY, value);
+      }
+
+      async function initializeBaseUrl() {
+        const storedUrl = getBaseUrl();
+        if (storedUrl) {
+          baseUrlInput.value = storedUrl.replace(
+            /\/(?:frontend\/)?guest\/menu\.html$/,
+            "",
+          );
+          return;
+        }
+
+        baseUrlInput.value = getDerivedFrontendBaseUrl();
+      }
+
+      saveBaseUrlButton.addEventListener("click", () => {
+        const value = baseUrlInput.value.trim().replace(/\/$/, "");
+        if (!value) {
+          Swal.fire("Lỗi", "Vui lòng nhập URL gốc hợp lệ", "warning");
+          return;
+        }
+
+        setBaseUrl(`${value}${guestMenuPath}`);
+        loadTables();
+        Swal.fire("Đã lưu", "QR sẽ được tạo theo URL mới", "success");
+      });
+
+      function renderEmpty(message) {
+        const grid = document.getElementById("qr-grid");
+        grid.innerHTML = `
+                <div class="col-span-full bg-white rounded-xl shadow p-6 text-center text-gray-500">
+                    ${message}
+                </div>
+            `;
+      }
+
+      async function loadTables() {
+        const grid = document.getElementById("qr-grid");
+        grid.innerHTML = `
+                <div class="col-span-full bg-white rounded-xl shadow p-6 text-center text-gray-400">
+                    <i class="fas fa-spinner fa-spin mr-2"></i>Đang tải danh sách bàn...
+                </div>
+            `;
+
+        try {
+          const res = await fetch(`${API}/tables/`);
+          if (!res.ok) throw new Error("Không thể tải danh sách bàn");
+          const tables = await res.json();
+
+          if (!tables.length) {
+            renderEmpty("Chưa có bàn nào trong hệ thống");
+            return;
+          }
+
+          const guestBaseUrl = getBaseUrl();
+          grid.innerHTML = "";
+          tables.forEach((t) => {
+            const qrValue = t.Ma_QR_Code;
+            const url = `${guestBaseUrl}?ban=${encodeURIComponent(qrValue)}`;
+
+            const div = document.createElement("div");
+            div.className = "bg-white rounded-xl shadow p-4 text-center";
+
+            const qrDiv = document.createElement("div");
+            qrDiv.id = `qr-${t.ID_Ban}`;
+            qrDiv.className = "flex justify-center mb-3";
+
+            div.appendChild(qrDiv);
+            div.innerHTML += `
+                        <p class="font-bold text-gray-800">Bàn ${t.TenBan}</p>
+                        <p class="text-xs text-gray-400 mt-1 break-all">${url}</p>
+                        <a href="${url}" target="_blank"
+                            class="inline-block mt-2 text-xs text-amber-700 hover:underline">
+                            <i class="fas fa-external-link-alt mr-1"></i>Mở thử
+                        </a>
+                    `;
+            grid.appendChild(div);
+
+            setTimeout(() => {
+              new QRCode(document.getElementById(`qr-${t.ID_Ban}`), {
+                text: url,
+                width: 128,
+                height: 128,
+              });
+            }, 100);
+          });
+        } catch (err) {
+          renderEmpty(`Lỗi tải dữ liệu: ${err.message}`);
+        }
+      }
+
+      async function startPage() {
+        await initializeBaseUrl();
+        loadTables();
+      }
+
+      startPage();
+    </script>
+  </body>
+</html>
